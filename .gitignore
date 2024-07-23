@@ -1,0 +1,106 @@
+# Node modules directory
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+jspm_packages/
+
+# Build output
+dist/
+build/
+
+# Optional npm cache directory
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# Optional VS Code directories and files
+.vscode/
+
+# Mac system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+Desktop.ini
+
+# Linux system files
+*~
+
+# VS Code settings
+.settings/
+
+# JetBrains IDEs (e.g., WebStorm) settings
+.idea/
+
+# Coverage directory used by testing tools
+coverage/
+
+# Local npm store
+.npm-store/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# SPM (Service Pack Manager) files
+*.spm
+
+# npm package lock file
+package-lock.json
+yarn.lock
+
+# TypeScript build directory
+*.tsbuildinfo
+
+# Next.js build output
+.next/
+out/
+
+# Nuxt.js build output
+.nuxt/
+dist/
+
+# SvelteKit build output
+.svelte-kit/
+
+# Vite build output
+.vite/
+
+# Prisma generated files
+prisma/
+
+# Generated GraphQL files
+.graphql/
+
+# Sphinx documentation
+docs/_build/
+
+# Serverless deployment
+.serverless/
+
+# Firebase deployment
+.firebase/
+
+# Puppeteer headless browser
+puppeteer/
+
+# Sentry configuration
+.sentry/
+
+# Optional environment settings
+.env.local
+.env.*.local
+.env.*
+.env
