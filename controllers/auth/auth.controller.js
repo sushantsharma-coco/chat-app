@@ -2,8 +2,43 @@ const User = require("../../models/user.model");
 const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
 
+const { randomUUID } = require("crypto");
+
+const options = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV == "production",
+};
+
 const loginUser = async (req, res) => {
   try {
+    const { email } = req.body;
+
+    if (!email || email == "") throw new ApiError(400, "email was sent empty");
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      let userId = randomUUID();
+      user = await User.create({ email, userId, isBlocked: [] });
+    }
+
+    if (!user)
+      throw new ApiError(500, "user creation during login unsuccessful");
+
+    const accessToken = await user.generateAccessToken();
+
+    user._id = undefined;
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .send(
+        new ApiResponse(
+          200,
+          { user, accessToken },
+          "user logged-in successfully"
+        )
+      );
   } catch (error) {
     console.error("error occured :", error?.message);
 
@@ -18,3 +53,28 @@ const loginUser = async (req, res) => {
       );
   }
 };
+
+const logoutUser = async (req, res) => {
+  try {
+    if (!req.user || !req.user?._id)
+      throw new ApiError(401, "'invalid user credentials");
+
+    return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .send(new ApiResponse(200, {}, "user logged-out successfully"));
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+module.exports = { loginUser, logoutUser };
