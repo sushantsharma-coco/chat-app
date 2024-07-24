@@ -28,18 +28,14 @@ app.use(json());
 app.use(urlencoded({ extended: true }));
 
 io.on("connection", (socket) => {
-  console.log("user connected via socket :", socket.id);
-
-  socket.on("msg", (msg) => {
-    console.log(msg);
-    io.emit("resp_msg", `Hi 😁${msg}`);
-  });
-
   socket.broadcast.emit("all", `${socket.id} is online`);
 
+  socket.on("msg", (msg) => {
+    socket.broadcast.emit("msg", `  from: ${socket.id}  \n message :${msg}`);
+  });
+
   socket.on("disconnect", () => {
-    socket.broadcast.emit("all", `${socket.id} is offline`);
-    console.log("user disconnected");
+    socket.broadcast.emit("all", `${socket.id} disconnected`);
   });
 });
 
@@ -54,3 +50,19 @@ app.use("/api/v1/users", allUsersRouter.router);
 server.listen(process.env.PORT, () => {
   console.log("server running on port:", process.env.PORT);
 });
+
+// io.on("connection", (socket) => {
+//   console.log("user connected via socket :", socket.id);
+
+//   socket.on("msg", (msg) => {
+//     console.log(msg);
+//     io.emit("resp_msg", `Hi 😁${msg}`);
+//   });
+
+//   socket.broadcast.emit("all", `${socket.id} is online`);
+
+//   socket.on("disconnect", () => {
+//     socket.broadcast.emit("all", `${socket.id} is offline`);
+//     console.log("user disconnected");
+//   });
+// });
