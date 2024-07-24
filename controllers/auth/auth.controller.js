@@ -11,15 +11,16 @@ const options = {
 
 const loginUser = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, name } = req.body;
 
-    if (!email || email == "") throw new ApiError(400, "email was sent empty");
+    if (!email || email == "" || !name || name == "")
+      throw new ApiError(400, "email or name was sent empty");
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email, name });
 
     if (!user) {
       let userId = randomUUID();
-      user = await User.create({ email, userId, isBlocked: [] });
+      user = await User.create({ email, name, userId, isBlocked: [] });
     }
 
     if (!user)
@@ -27,11 +28,11 @@ const loginUser = async (req, res) => {
 
     const accessToken = await user.generateAccessToken();
 
-    user._id = undefined;
+    user._id = null;
 
     return res
-      .status(200)
       .cookie("accessToken", accessToken, options)
+      .status(200)
       .send(
         new ApiResponse(
           200,
@@ -77,4 +78,5 @@ const logoutUser = async (req, res) => {
       );
   }
 };
+
 module.exports = { loginUser, logoutUser };

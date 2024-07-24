@@ -14,7 +14,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-    isBlocked: [
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    isBlockedByUser: [
       {
         userId: { type: String, trim: true },
         userRef: {
