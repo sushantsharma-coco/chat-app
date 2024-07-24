@@ -4,6 +4,7 @@ const { ApiError } = require("../utils/ApiError.utils");
 
 const auth = async (req, res, next) => {
   try {
+    console.log("auth is running");
     const accessToken =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "");
@@ -18,8 +19,8 @@ const auth = async (req, res, next) => {
     if (tokenData?.exp && tokenData.exp < Date.now() / 1000)
       throw new ApiError(401, "token has been expired");
 
-    if (!tokenData || tokenData?._id)
-      throw new ApiError(404, "invalid user creds");
+    if (!tokenData || !tokenData?._id)
+      throw new ApiError(401, "invalid user creds");
 
     const user = await User.findById(tokenData?._id);
 

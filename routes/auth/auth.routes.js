@@ -9,6 +9,6 @@ const router = require("express").Router();
 router.route("/sign-in").post(loginUser);
 
 router.use(auth);
-router.router("/sign-out").get(logoutUser);
+router.route("/sign-out").get(logoutUser);
 
-module.exports;
+module.exports = { router };
