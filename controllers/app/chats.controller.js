@@ -94,7 +94,7 @@ const getMessages = async (req, res) => {
       .send(
         new ApiResponse(
           200,
-          { messages: chatExists.messages },
+          { messages: chatExists?.messages },
           "messages recived successfully"
         )
       );
