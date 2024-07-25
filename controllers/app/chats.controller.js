@@ -1,7 +1,6 @@
 const Message = require("../../models/message.model");
 const Conversation = require("../../models/conversation.model");
 const User = require("../../models/user.model");
-const { randomUUID } = require("crypto");
 const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
 const { getReciverSocketId, io } = require("../../socket/socket");
@@ -15,14 +14,10 @@ const sendMessage = async (req, res) => {
     const senderId = req.user.userId;
     let message = req.body;
 
-    const reciverExists = await User.findOne({ userId: reciverId }).select(
-      "_id userId"
-    );
+    const reciverExists = await User.findById(reciverId).select("_id userId");
 
     if (!reciverExists)
       throw new ApiError(404, "user with reciverId not found in the system");
-
-    if (reciverExists?.userId == req.user?.userId) message.isSeen = true;
 
     // if chat exists
     let convo = await Conversation.findOne({

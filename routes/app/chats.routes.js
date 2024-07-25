@@ -17,6 +17,8 @@ router
   .patch(updateMessage)
   .delete(deleteMessage);
 
+router.route("/s/:reciverId/:message_id").patch();
+
 router.route("/blc-usr/:userId").patch(blockUser);
 
 module.exports = { router };
