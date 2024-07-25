@@ -3,7 +3,7 @@ const User = require("../../models/user.model");
 const { randomUUID } = require("crypto");
 const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
-const { getReciverSocketId, io } = require("../../index");
+const { getReciverSocketId, io } = require("../../socket/socket");
 
 const sendMessage = async (req, res) => {
   try {
