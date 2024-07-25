@@ -29,30 +29,22 @@ const sendMessage = async (req, res) => {
       chatExists.messages.push({ ...message });
 
       await chatExists.save();
+    } else {
+      // if chat doesn't exists
+      const chatId = randomUUID();
 
-      return res
-        .status(201)
-        .send(
-          new ApiResponse(
-            201,
-            { from: senderId, to: reciverId, ...message },
-            "message sent successfully"
-          )
-        );
+      const newChat = await Chats.create({
+        chatId,
+        senderId,
+        senderRef: req.user?._id,
+        reciverId,
+        reciverRef: reciverExists?._id,
+        messages: [message],
+      });
+
+      if (!newChat)
+        throw new ApiError(500, "unable to send message to reciver");
     }
-
-    // if chat doesn't exists
-    const chatId = randomUUID();
-    const newChat = await Chats.create({
-      chatId,
-      senderId,
-      senderRef: req.user?._id,
-      reciverId,
-      reciverRef: reciverExists?._id,
-      messages: [message],
-    });
-
-    if (!newChat) throw new ApiError(500, "unable to send message to reciver");
 
     // socket
     const reciverSocketId = getReciverSocketId(reciverId);
