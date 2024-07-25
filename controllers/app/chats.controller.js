@@ -3,6 +3,7 @@ const User = require("../../models/user.model");
 const { randomUUID } = require("crypto");
 const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
+const { getReciverSocketId } = require("../../index");
 
 const sendMessage = async (req, res) => {
   try {
@@ -52,6 +53,12 @@ const sendMessage = async (req, res) => {
     });
 
     if (!newChat) throw new ApiError(500, "unable to send message to reciver");
+
+    // socket
+    const reciverSocketId = getReciverSocketId(reciverId);
+    if (reciverSocketId) {
+      io.to(reciverSocketId).emit("newMsg", message);
+    }
 
     return res
       .status(201)
