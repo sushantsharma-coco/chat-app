@@ -79,4 +79,29 @@ const logoutUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, logoutUser };
+const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user || !req.user?._id)
+      throw new ApiError(401, "'invalid user credentials");
+
+    return res
+      .status(200)
+      .send(
+        new ApiResponse(200, req.user, "current user fetched successfully")
+      );
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+
+module.exports = { loginUser, logoutUser, getCurrentUser };
