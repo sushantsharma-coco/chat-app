@@ -86,7 +86,7 @@ const getMessages = async (req, res) => {
     const senderId = req.user?._id;
 
     const chatExists = await Conversation.findOne({
-      participants: [senderId, reciverId],
+      participants: { $all: [senderId, reciverId] },
     }).populate("messages");
 
     return res
