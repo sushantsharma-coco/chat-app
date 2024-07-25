@@ -4,7 +4,6 @@ const { ApiError } = require("../utils/ApiError.utils");
 
 const auth = async (req, res, next) => {
   try {
-    console.log("auth is running");
     const accessToken =
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "");
