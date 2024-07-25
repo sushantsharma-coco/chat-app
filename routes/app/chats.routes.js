@@ -19,6 +19,6 @@ router
 
 router.route("/s/:reciverId/:message_id").patch();
 
-router.route("/blc-usr/:userId").patch(blockUser);
+router.route("/blc-usr/:user_id").patch(blockUser);
 
 module.exports = { router };

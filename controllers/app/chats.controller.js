@@ -124,7 +124,9 @@ const updateMessage = async (req, res) => {
 
     let message = req.body;
 
-    const messages = await Chats.findOne({ senderId, reciverId });
+    const messages = await Conversation.findOne({
+      participants: [senderId, reciverId],
+    }).populate("messages");
 
     messages.forEach((element) => {
       if (element?._id == message_id) {
@@ -263,8 +265,8 @@ const deleteMessage = async (req, res) => {
 
 const blockUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const userExists = await User.findOne({ userId }).select("userId _id");
+    const { user_id } = req.params;
+    const userExists = await User.findById(user_id).select("userId _id");
 
     if (!userExists) throw new ApiError(404, "user with userId not found");
 
