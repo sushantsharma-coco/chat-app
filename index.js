@@ -1,6 +1,4 @@
-const app = require("express")();
-const http = require("http");
-const { Server } = require("socket.io");
+const { app, server } = require("./socket/socket");
 
 const env = require("dotenv");
 const cors = require("cors");
@@ -16,13 +14,6 @@ env.config({ path: "./secret.env" });
 
 dbConnect();
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
-
 app.use(
   cors({
     origin: ["*", "http://localhost:5173"],
@@ -30,32 +21,6 @@ app.use(
 );
 app.use(json());
 app.use(urlencoded({ extended: true }));
-
-const userSocketMap = {}; //{userId:socket.id}
-
-const getReciverSocketId = (reciverId) => {
-  return userSocketMap[reciverId];
-};
-
-io.on("connection", (socket) => {
-  socket.broadcast.emit("all", `${socket.id}  connected`);
-
-  const userId = socket.handshake.query.userId;
-
-  if (userId) userSocketMap[userId] = socket.id;
-  io.emit("onlineUsers", Object.keys(userSocketMap));
-
-  socket.on("msg", (msg) => {
-    socket.broadcast.emit("msg", `  from: ${socket.id}  \n message :${msg}`);
-  });
-
-  socket.on("disconnect", () => {
-    socket.broadcast.emit("all", `${socket.id} disconnected`);
-
-    delete userSocketMap[userId];
-    io.emit("onlineUsers", Object.keys(userSocketMap));
-  });
-});
 
 app.get("/", (req, res) => {
   return res.status(200).send({ message: "home page", statusCode: 200 });
@@ -68,8 +33,6 @@ app.use("/api/v1/users", allUsersRouter.router);
 server.listen(process.env.PORT, () => {
   console.log("server running on port:", process.env.PORT);
 });
-
-module.exports = { getReciverSocketId, io };
 
 // io.on("connection", (socket) => {
 //   console.log("user connected via socket :", socket.id);
