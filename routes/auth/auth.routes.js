@@ -1,6 +1,7 @@
 const {
   loginUser,
   logoutUser,
+  getCurrentUser,
 } = require("../../controllers/auth/auth.controller");
 const { auth } = require("../../middlewares/auth.middleware");
 
@@ -10,5 +11,6 @@ router.route("/sign-in").post(loginUser);
 
 router.use(auth);
 router.route("/sign-out").get(logoutUser);
+router.route("/crnt-usr").get(getCurrentUser);
 
 module.exports = { router };
