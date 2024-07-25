@@ -4,6 +4,7 @@ const User = require("../../models/user.model");
 const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
 const { getReciverSocketId, io } = require("../../socket/socket");
+const { isValidObjectId } = require("mongoose");
 
 const sendMessage = async (req, res) => {
   try {
@@ -11,8 +12,15 @@ const sendMessage = async (req, res) => {
       throw new ApiError(401, "invalid user credentials");
 
     const { reciverId } = req.params;
-    const senderId = req.user.userId;
-    let message = req.body;
+    const senderId = req.user?._id;
+
+    if (!isValidObjectId(reciverId))
+      throw new ApiError(400, "invalid reciver user's _id");
+
+    if (!isValidObjectId(senderId))
+      throw new ApiError(400, "invalid sender user's _id");
+
+    let { message } = req.body;
 
     const reciverExists = await User.findById(reciverId).select("_id userId");
 
@@ -25,7 +33,7 @@ const sendMessage = async (req, res) => {
     });
 
     if (!convo) {
-      convo = new Conversation.create({
+      convo = await Conversation.create({
         participants: [senderId, reciverId],
       });
     }
@@ -50,7 +58,7 @@ const sendMessage = async (req, res) => {
       .send(
         new ApiResponse(
           201,
-          { from: senderId, to: reciverId, ...message },
+          { from: senderId, to: reciverId, message },
           "message sent successfully"
         )
       );
@@ -75,7 +83,7 @@ const getMessages = async (req, res) => {
       throw new ApiError(401, "invalid user credentials");
 
     const { reciverId } = req.params;
-    const senderId = req.user.userId;
+    const senderId = req.user?._id;
 
     const chatExists = await Conversation.findOne({
       participants: [senderId, reciverId],
