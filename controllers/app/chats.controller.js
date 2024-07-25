@@ -5,6 +5,7 @@ const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
 const { getReciverSocketId, io } = require("../../socket/socket");
 const { isValidObjectId } = require("mongoose");
+const Messag = require("../../models/message.model");
 
 const sendMessage = async (req, res) => {
   try {
@@ -115,6 +116,7 @@ const getMessages = async (req, res) => {
 
 const updateMessage = async (req, res) => {
   try {
+    console.log("update running");
     if (!req.user || !req.user?._id)
       throw new ApiError(401, "invalid user credentials");
 
@@ -122,11 +124,21 @@ const updateMessage = async (req, res) => {
     const { reciverId } = req.params;
     const { message_id } = req.params;
 
+    if (!isValidObjectId(reciverId))
+      throw new ApiError(400, "invalid reciver's user _id");
+
+    if (!isValidObjectId(message_id))
+      throw new ApiError(400, "invalid message's _id");
+
     let message = req.body;
 
+    console.log(senderId, reciverId);
+
     const messages = await Conversation.findOne({
-      participants: [senderId, reciverId],
+      participants: { $all: [senderId, reciverId] },
     }).populate("messages");
+
+    console.log("messages", messages);
 
     messages.forEach((element) => {
       if (element?._id == message_id) {
@@ -174,12 +186,16 @@ const updateMessage = async (req, res) => {
   }
 };
 
+// i have two approaches this this
+// one is that i directly find the message and update the it and send it in the response to the client which is more efficient
+// sencond is i find the message update it and then collect all the messages with udpated message and send it to the client which is less effiecient
+
+// NUMBER_1_APP
 const updateMessageSecondApproach = async (req, res) => {
   try {
-    if (req.user || !req.user?._id)
+    if (!req.user || !req.user?._id)
       throw new ApiError(401, "invalid user creds");
 
-    const senderId = req.user?._id;
     const { reciverId } = req.params;
     const { message_id } = req.params;
     const { message } = req.body;
@@ -187,27 +203,78 @@ const updateMessageSecondApproach = async (req, res) => {
     if (!message || !reciverId || message == "" || reciverId == "")
       throw new ApiError(400, "message or reciverId not sent");
 
-    const chats = await Chats.findOne({ senderId, reciverId });
-    let count = 0;
-    for (let i = 0; i < chats.length; i++) {
-      if (chats[i]?._id == message_id) count = i;
-    }
+    const updtMsg = await Message.findByIdAndUpdate(
+      message_id,
+      {
+        $set: {
+          message,
+        },
+      },
+      { new: true }
+    );
+
+    console.log(updtMsg);
 
     const reciverSocketId = getReciverSocketId(reciverId);
 
     if (reciverSocketId) {
       io.to(reciverSocketId).emit("updtMsg", message);
-
-      chats[count] = { message, isSeen: true };
-    } else {
-      chats[count] = { message, isSeen: false };
     }
-
-    await chats.save();
-
     return res
       .status(200)
       .send(new ApiResponse(200, message, "message updated successfully"));
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+
+// NUMBER_2_APP
+const updateMessageSecondApproach2 = async (req, res) => {
+  try {
+    if (!req.user || !req.user?._id)
+      throw new ApiError(401, "invalid user creds");
+
+    const { reciverId } = req.params;
+    const { message_id } = req.params;
+    const { message } = req.body;
+
+    let updtMsg = await Message.findByIdAndUpdate(
+      message_id,
+      {
+        $set: {
+          message,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updtMsg) throw new ApiError(404, "message not found to update");
+
+    const reciverSocketId = getReciverSocketId(reciverId);
+    if (reciverSocketId) {
+      const newMsgs = await Conversation.find({
+        participants: { $all: [req.user?._id, reciverId] },
+      }).populate("messages");
+
+      io.to(reciverSocketId).emit("updtMsg", updtMsg);
+      io.to(reciverSocketId).emit("newMsgs", newMsgs);
+
+      const mySocketId = getReciverSocketId(req.user?._id);
+      if (mySocketId) {
+        io.to(mySocketId).emit("updtMsg", updtMsg);
+        io.to(mySocketId).emit("newMsgs", newMsgs);
+      }
+    }
   } catch (error) {
     console.error("error occured :", error?.message);
 
@@ -232,18 +299,40 @@ const deleteMessage = async (req, res) => {
     const { reciverId } = req.params;
     const { message_id } = req.params;
 
-    const messages = Chats.findOne({ senderId, reciverId }).select("messages");
+    if (!isValidObjectId(reciverId))
+      throw new ApiError(400, "invalid reciver's objId");
 
-    for (let i = 0; i < messages.length; i++) {
-      if (messages[i]?._id == message_id) {
-        delete messages[i];
-      }
-    }
+    if (!isValidObjectId(message_id))
+      throw new ApiError(400, "invalid message's objId");
 
-    await messages.save();
+    const message = await Message.findByIdAndDelete(message_id);
+
+    if (!message) throw new ApiError(404, "message not found to be updated");
 
     const reciverSocketId = getReciverSocketId(reciverId);
-    if (reciverSocketId) io.to(reciverSocketId).emit("delMsg", messages);
+    if (reciverSocketId) {
+      io.to(reciverSocketId).emit(
+        "delMsgs",
+        `message with message_id:${message?._id} was deleted by user with id:${senderId}`
+      );
+
+      const allMsgs = await Conversation.find({
+        participants: { $all: [senderId, reciverId] },
+      }).populate("messages");
+
+      io.to(reciverSocketId).emit("allMsgs", allMsgs);
+
+      const mySocketId = getReciverSocketId(senderId);
+
+      if (mySocketId) {
+        io.to(mySocketId).emit(
+          "updtMsg",
+          `you deleted message with message_id: ${message_id}`
+        );
+
+        io.to(reciverSocketId).emit("allMsgs", allMsgs);
+      }
+    }
 
     return res
       .status(200)
