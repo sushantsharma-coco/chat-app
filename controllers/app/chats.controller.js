@@ -124,6 +124,65 @@ const getMessages = async (req, res) => {
   }
 };
 
+const updateMessage = async (req, res) => {
+  try {
+    if (!req.user || !req.user?._id)
+      throw new ApiError(401, "invalid user credentials");
+
+    const senderId = req.user?.userId;
+    const { reciverId } = req.params;
+    const { message_id } = req.params;
+
+    let message = req.body;
+
+    const messages = await Chats.findOne({ senderId, reciverId });
+
+    messages.forEach((element) => {
+      if (element?._id == message_id) {
+        element.message = message;
+        element.isSeen = false;
+
+        message = element;
+      }
+    });
+
+    const reciverSocketId = getReciverSocketId(reciverId);
+    if (reciverSocketId) {
+      io.to("updtMsg", { messages, updatedMessage: message, isSeen: true });
+
+      messages.forEach((element) => {
+        if (element?._id == message_id) {
+          element.isSeen = true;
+        }
+      });
+    }
+
+    await messages.save();
+
+    return res
+      .status(200)
+      .send(
+        new ApiResponse(
+          200,
+          { message, isSeen: false },
+          "message updated successfully"
+        )
+      );
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+
 const deleteMessage = async (req, res) => {
   try {
     if (!req.user || !req.user?._id)
@@ -164,4 +223,60 @@ const deleteMessage = async (req, res) => {
   }
 };
 
-module.exports = { sendMessage, getMessages };
+const blockUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const userExists = await User.findOne({ userId }).select("userId _id");
+
+    if (!userExists) throw new ApiError(404, "user with userId not found");
+
+    const you = User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $push: {
+          isBlockedByUser: {
+            userId: userExists.userId,
+            userRef: userExists?._id,
+          },
+        },
+      },
+      { new: true }
+    );
+
+    if (!you) throw new ApiError(500, "unable to block user");
+
+    const reciverSocketId = getReciverSocketId(userExists.userId);
+    if (reciverSocketId)
+      io.to(reciverSocketId).emit("blocked", `${you.userId} blocked you`);
+
+    return res
+      .status(200)
+      .send(
+        new ApiResponse(
+          200,
+          { blockedUser: isBlockedByUser[userId] },
+          "user with sent userId blocked successfully"
+        )
+      );
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+
+module.exports = {
+  sendMessage,
+  getMessages,
+  updateMessage,
+  deleteMessage,
+  blockUser,
+};
