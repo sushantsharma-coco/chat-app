@@ -16,7 +16,7 @@ const loginUser = async (req, res) => {
     if (!email || email == "" || !name || name == "")
       throw new ApiError(400, "email or name was sent empty");
 
-    let user = await User.findOne({ email, name });
+    let user = await User.findOne({ email });
 
     if (!user) {
       let userId = randomUUID();
