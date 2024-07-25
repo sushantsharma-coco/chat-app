@@ -1,4 +1,5 @@
-const Chats = require("../../models/chats.model");
+const Message = require("../../models/message.model");
+const Conversation = require("../../models/conversation.model");
 const User = require("../../models/user.model");
 const { randomUUID } = require("crypto");
 const { ApiError } = require("../../utils/ApiError.utils");
@@ -24,32 +25,29 @@ const sendMessage = async (req, res) => {
     if (reciverExists?.userId == req.user?.userId) message.isSeen = true;
 
     // if chat exists
-    const chatExists = await Chats.findOne({ reciverId, senderId });
-    if (chatExists) {
-      chatExists.messages.push({ ...message });
+    let convo = await Conversation.findOne({
+      participants: { $all: [senderId, reciverId] },
+    });
 
-      await chatExists.save();
-    } else {
-      // if chat doesn't exists
-      const chatId = randomUUID();
-
-      const newChat = await Chats.create({
-        chatId,
-        senderId,
-        senderRef: req.user?._id,
-        reciverId,
-        reciverRef: reciverExists?._id,
-        messages: [message],
+    if (!convo) {
+      convo = new Conversation.create({
+        participants: [senderId, reciverId],
       });
-
-      if (!newChat)
-        throw new ApiError(500, "unable to send message to reciver");
     }
+
+    const newMsg = await Message.create({
+      senderId,
+      reciverId,
+      message,
+    });
+
+    convo.messages.push(newMsg?._id);
+    await convo.save();
 
     // socket
     const reciverSocketId = getReciverSocketId(reciverId);
     if (reciverSocketId) {
-      io.to(reciverSocketId).emit("newMsg", message);
+      io.to(reciverSocketId).emit("newMsg", newMsg);
     }
 
     return res
@@ -84,13 +82,9 @@ const getMessages = async (req, res) => {
     const { reciverId } = req.params;
     const senderId = req.user.userId;
 
-    const chatExists = await Chats.findOne({ senderId, reciverId });
-
-    if (!chatExists)
-      throw new ApiError(
-        404,
-        "chat between you and  user with reciverId doesn't exists"
-      );
+    const chatExists = await Conversation.findOne({
+      participants: [senderId, reciverId],
+    }).populate("messages");
 
     return res
       .status(200)
@@ -98,7 +92,7 @@ const getMessages = async (req, res) => {
         new ApiResponse(
           200,
           { messages: chatExists.messages },
-          "message sent successfully"
+          "messages recived successfully"
         )
       );
   } catch (error) {
@@ -160,6 +154,55 @@ const updateMessage = async (req, res) => {
           "message updated successfully"
         )
       );
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+
+const updateMessageSecondApproach = async (req, res) => {
+  try {
+    if (req.user || !req.user?._id)
+      throw new ApiError(401, "invalid user creds");
+
+    const senderId = req.user?._id;
+    const { reciverId } = req.params;
+    const { message_id } = req.params;
+    const { message } = req.body;
+
+    if (!message || !reciverId || message == "" || reciverId == "")
+      throw new ApiError(400, "message or reciverId not sent");
+
+    const chats = await Chats.findOne({ senderId, reciverId });
+    let count = 0;
+    for (let i = 0; i < chats.length; i++) {
+      if (chats[i]?._id == message_id) count = i;
+    }
+
+    const reciverSocketId = getReciverSocketId(reciverId);
+
+    if (reciverSocketId) {
+      io.to(reciverSocketId).emit("updtMsg", message);
+
+      chats[count] = { message, isSeen: true };
+    } else {
+      chats[count] = { message, isSeen: false };
+    }
+
+    await chats.save();
+
+    return res
+      .status(200)
+      .send(new ApiResponse(200, message, "message updated successfully"));
   } catch (error) {
     console.error("error occured :", error?.message);
 
@@ -269,6 +312,7 @@ module.exports = {
   sendMessage,
   getMessages,
   updateMessage,
+  updateMessageSecondApproach,
   deleteMessage,
   blockUser,
 };
