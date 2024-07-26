@@ -69,13 +69,7 @@ const sendMessage = async (req, res) => {
 
     return res
       .status(201)
-      .send(
-        new ApiResponse(
-          201,
-          { from: senderId, to: reciverId, message },
-          "message sent successfully"
-        )
-      );
+      .send(new ApiResponse(201, newMsg, "message sent successfully"));
   } catch (error) {
     console.error("error occured :", error?.message);
 
