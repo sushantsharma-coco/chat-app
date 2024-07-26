@@ -5,7 +5,6 @@ const { ApiError } = require("../../utils/ApiError.utils");
 const { ApiResponse } = require("../../utils/ApiResponse.utils");
 const { getReciverSocketId, io } = require("../../socket/socket");
 const { isValidObjectId } = require("mongoose");
-const Messag = require("../../models/message.model");
 
 const sendMessage = async (req, res) => {
   try {
@@ -23,10 +22,23 @@ const sendMessage = async (req, res) => {
 
     let { message } = req.body;
 
-    const reciverExists = await User.findById(reciverId).select("_id userId");
+    const reciverExists = await User.findById(reciverId);
+    const user = await User.findById(senderId);
 
     if (!reciverExists)
       throw new ApiError(404, "user with reciverId not found in the system");
+
+    if (reciverExists.isBlockedByUser.includes({ userRef: senderId }))
+      throw new ApiError(
+        400,
+        "you can't send message to reciver as you are blocked by the reciver"
+      );
+
+    if (user.isBlockedByUser.includes({ userRef: reciverId }))
+      throw new ApiError(
+        400,
+        "you can't send message to reciver as you've blocked the reciver"
+      );
 
     // if chat exists
     let convo = await Conversation.findOne({
@@ -52,6 +64,7 @@ const sendMessage = async (req, res) => {
     const reciverSocketId = getReciverSocketId(reciverId);
     if (reciverSocketId) {
       io.to(reciverSocketId).emit("newMsg", newMsg);
+      console.log("newMsg", newMsg);
     }
 
     return res
@@ -219,6 +232,7 @@ const updateMessageSecondApproach = async (req, res) => {
 
     if (reciverSocketId) {
       io.to(reciverSocketId).emit("updtMsg", message);
+      console.log("updtMsg", updtMsg);
     }
     return res
       .status(200)
@@ -295,7 +309,7 @@ const deleteMessage = async (req, res) => {
     if (!req.user || !req.user?._id)
       throw new ApiError(401, "invalid user credentials");
 
-    const senderId = req.user?.userId;
+    const senderId = req.user?._id;
     const { reciverId } = req.params;
     const { message_id } = req.params;
 
@@ -315,12 +329,14 @@ const deleteMessage = async (req, res) => {
         "delMsgs",
         `message with message_id:${message?._id} was deleted by user with id:${senderId}`
       );
+      console.log("delMsgs", message_id);
 
       const allMsgs = await Conversation.find({
         participants: { $all: [senderId, reciverId] },
       }).populate("messages");
 
       io.to(reciverSocketId).emit("allMsgs", allMsgs);
+      console.log("allMsgs", allMsgs);
 
       const mySocketId = getReciverSocketId(senderId);
 
@@ -329,14 +345,16 @@ const deleteMessage = async (req, res) => {
           "updtMsg",
           `you deleted message with message_id: ${message_id}`
         );
+        console.log("updatmsg to me", message_id);
 
         io.to(reciverSocketId).emit("allMsgs", allMsgs);
+        console.log("allMsgs to me", allMsgs);
       }
     }
 
     return res
       .status(200)
-      .send(new ApiResponse(200, { messages }, "message deleted successfully"));
+      .send(new ApiResponse(200, { message }, "message deleted successfully"));
   } catch (error) {
     console.error("error occured :", error?.message);
 
@@ -377,13 +395,18 @@ const blockUser = async (req, res) => {
     const reciverSocketId = getReciverSocketId(userExists.userId);
     if (reciverSocketId)
       io.to(reciverSocketId).emit("blocked", `${you.userId} blocked you`);
+    console.log("blockUser:", you.userId);
+
+    const sendersocketid = getReciverSocketId(req.user._id);
+    if (sendersocketid)
+      io.to(sendersocketid).emit("you blocked by :", reciverId);
 
     return res
       .status(200)
       .send(
         new ApiResponse(
           200,
-          { blockedUser: isBlockedByUser[userId] },
+          { blockedUser: isBlockedByUser[user_id] },
           "user with sent userId blocked successfully"
         )
       );
