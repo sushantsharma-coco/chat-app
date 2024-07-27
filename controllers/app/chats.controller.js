@@ -321,7 +321,8 @@ const deleteMessage = async (req, res) => {
     if (reciverSocketId) {
       io.to(reciverSocketId).emit(
         "delMsgs",
-        `message with message_id:${message?._id} was deleted by user with id:${senderId}`
+        { senderId, message_id: message?._id }
+        // `message with message_id:${message?._id} was deleted by user with id:${senderId}`
       );
       console.log("delMsgs", message_id);
 
