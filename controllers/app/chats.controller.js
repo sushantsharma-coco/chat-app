@@ -225,8 +225,7 @@ const updateMessageSecondApproach = async (req, res) => {
     const reciverSocketId = getReciverSocketId(reciverId);
 
     if (reciverSocketId) {
-      io.to(reciverSocketId).emit("updtMsg", `${(senderId, message?._id)}`);
-      console.log("updtMsg", updtMsg);
+      io.to(reciverSocketId).emit("updtMsg", updtMsg);
     }
     return res
       .status(200)
