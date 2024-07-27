@@ -225,7 +225,10 @@ const updateMessageSecondApproach = async (req, res) => {
     const reciverSocketId = getReciverSocketId(reciverId);
 
     if (reciverSocketId) {
-      io.to(reciverSocketId).emit("updtMsg", message);
+      io.to(reciverSocketId).emit("updtMsg", {
+        senderId,
+        message_id: message?._id,
+      });
       console.log("updtMsg", updtMsg);
     }
     return res
@@ -319,11 +322,10 @@ const deleteMessage = async (req, res) => {
 
     const reciverSocketId = getReciverSocketId(reciverId);
     if (reciverSocketId) {
-      io.to(reciverSocketId).emit(
-        "delMsgs",
-        { senderId, message_id: message?._id }
-        // `message with message_id:${message?._id} was deleted by user with id:${senderId}`
-      );
+      io.to(reciverSocketId).emit("delMsgs", {
+        senderId,
+        message_id: message?._id,
+      });
       console.log("delMsgs", message_id);
 
       const allMsgs = await Conversation.find({
