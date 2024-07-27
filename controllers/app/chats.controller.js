@@ -220,15 +220,12 @@ const updateMessageSecondApproach = async (req, res) => {
       { new: true }
     );
 
-    console.log(updtMsg);
+    if (!updtMsg) throw new ApiError(404, "message not found to be updated");
 
     const reciverSocketId = getReciverSocketId(reciverId);
 
     if (reciverSocketId) {
-      io.to(reciverSocketId).emit("updtMsg", {
-        senderId,
-        message_id: message?._id,
-      });
+      io.to(reciverSocketId).emit("updtMsg", `${(senderId, message?._id)}`);
       console.log("updtMsg", updtMsg);
     }
     return res
