@@ -50,6 +50,8 @@ io.on("connection", (socket) => {
         },
       ]);
 
+      console.log(messages[0].messages);
+
       const messageIds = messages[0].messages.map((msg) => msg._id);
 
       await Message.updateMany(
