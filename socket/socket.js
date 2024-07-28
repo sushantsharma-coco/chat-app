@@ -28,7 +28,7 @@ io.on("connection", (socket) => {
 
   socket.on("markMessageAsSeen", async ({ senderId, reciverId }) => {
     try {
-      await Conversation.aggregate([
+      const convo = await Conversation.aggregate([
         {
           $match: {
             participants: {
@@ -49,12 +49,14 @@ io.on("connection", (socket) => {
             "message.isSeen": true,
           },
         },
+        {
+          $project: {
+            "message._id": 1,
+          },
+        },
       ]);
 
-      io.to(userSocketMap[reciverId]).emit(
-        "messageSeen",
-        "messages has been seen"
-      );
+      io.to(userSocketMap[reciverId]).emit("messageSeen", convo);
     } catch (error) {
       console.error("error occured:", error?.message);
     }
