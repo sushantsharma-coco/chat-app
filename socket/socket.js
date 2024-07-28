@@ -26,12 +26,14 @@ io.on("connection", (socket) => {
   if (userId) userSocketMap[userId] = socket.id;
   io.emit("onlineUsers", Object.keys(userSocketMap));
 
-  socket.on("markMessageAsSeen", async ({ conversationId, userId }) => {
+  socket.on("markMessageAsSeen", async ({ senderId, reciverId }) => {
     try {
       await Conversation.aggregate([
         {
           $match: {
-            _id: mongoose.Schema.ObjectId(conversationId),
+            participants: {
+              $all: [ObjectId(senderId), ObjectId(reciverId)],
+            },
           },
         },
         {
@@ -49,7 +51,10 @@ io.on("connection", (socket) => {
         },
       ]);
 
-      io.to(userSocketMap[userId]).emit("messageSeen", { conversationId });
+      io.to(userSocketMap[reciverId]).emit(
+        "messageSeen",
+        "messages has been seen"
+      );
     } catch (error) {
       console.error("error occured:", error?.message);
     }
