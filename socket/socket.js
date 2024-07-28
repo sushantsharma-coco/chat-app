@@ -1,7 +1,7 @@
 const { Server } = require("socket.io");
 const http = require("http");
 const Conversation = require("../models/conversation.model");
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const Message = require("../models/message.model");
 const app = require("express")();
 
@@ -33,7 +33,10 @@ io.on("connection", (socket) => {
         {
           $match: {
             participants: {
-              $all: [ObjectId(senderId), ObjectId(reciverId)],
+              $all: [
+                mongoose.Schema.ObjectId(senderId),
+                mongoose.Schema.ObjectId(reciverId),
+              ],
             },
           },
         },
