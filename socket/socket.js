@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
 
   socket.on("markMessageAsSeen", async ({ senderId, reciverId }) => {
     try {
-      const { messages } = await Conversation.aggregate([
+      const  messages  = await Conversation.aggregate([
         {
           $match: {
             participants: {
@@ -50,7 +50,7 @@ io.on("connection", (socket) => {
         },
       ]);
 
-      const messageIds = messages.map((msg) => msg._id);
+      const messageIds = messages[0].messages.map((msg) => msg._id);
 
       await Message.updateMany(
         { _id: { $in: messageIds }, isSeen: false },
