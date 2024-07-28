@@ -34,8 +34,8 @@ io.on("connection", (socket) => {
           $match: {
             participants: {
               $all: [
-                mongoose.Types.ObjectId(senderId),
-                mongoose.Types.ObjectId(reciverId),
+                new mongoose.Types.ObjectId(senderId),
+                new mongoose.Types.ObjectId(reciverId),
               ],
             },
           },
