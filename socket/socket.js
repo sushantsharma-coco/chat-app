@@ -1,5 +1,7 @@
 const { Server } = require("socket.io");
 const http = require("http");
+const Conversation = require("../models/conversation.model");
+const { default: mongoose } = require("mongoose");
 const app = require("express")();
 
 const server = http.createServer(app);
@@ -23,6 +25,35 @@ io.on("connection", (socket) => {
 
   if (userId) userSocketMap[userId] = socket.id;
   io.emit("onlineUsers", Object.keys(userSocketMap));
+
+  socket.on("markMessageAsSeen", async ({ conversationId, userId }) => {
+    try {
+      await Conversation.aggregate([
+        {
+          $match: {
+            _id: mongoose.Schema.ObjectId(conversationId),
+          },
+        },
+        {
+          $lookup: {
+            from: "messages",
+            localField: "messages",
+            foreignField: "_id",
+            as: "message",
+          },
+        },
+        {
+          $set: {
+            "message.isSeen": true,
+          },
+        },
+      ]);
+
+      io.to(userSocketMap[userId]).emit("messageSeen", { conversationId });
+    } catch (error) {
+      console.error("error occured:", error?.message);
+    }
+  });
 
   socket.on("msg", (msg) => {
     socket.broadcast.emit("msg", `  from: ${socket.id}  \n message :${msg}`);
