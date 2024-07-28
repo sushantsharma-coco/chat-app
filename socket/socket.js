@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const http = require("http");
 const Conversation = require("../models/conversation.model");
 const { default: mongoose } = require("mongoose");
+const Message = require("../models/message.model");
 const app = require("express")();
 
 const server = http.createServer(app);
@@ -28,7 +29,7 @@ io.on("connection", (socket) => {
 
   socket.on("markMessageAsSeen", async ({ senderId, reciverId }) => {
     try {
-      const convo = await Conversation.aggregate([
+      const { messages } = await Conversation.aggregate([
         {
           $match: {
             participants: {
@@ -41,20 +42,17 @@ io.on("connection", (socket) => {
             from: "messages",
             localField: "messages",
             foreignField: "_id",
-            as: "message",
-          },
-        },
-        {
-          $set: {
-            "message.isSeen": true,
-          },
-        },
-        {
-          $project: {
-            "message._id": 1,
+            as: "messages",
           },
         },
       ]);
+
+      const messageIds = messages.map((msg) => msg._id);
+
+      await Message.updateMany(
+        { _id: { $in: messageIds }, isSeen: false },
+        { $set: { isSeen: true } }
+      );
 
       io.to(userSocketMap[reciverId]).emit("messageSeen", convo);
     } catch (error) {
