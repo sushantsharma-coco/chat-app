@@ -57,7 +57,7 @@ io.on("connection", (socket) => {
         { $set: { isSeen: true } }
       );
 
-      io.to(userSocketMap[reciverId]).emit("messageSeen", convo);
+      io.to(userSocketMap[reciverId]).emit("messageSeen", messageIds);
     } catch (error) {
       console.error("error occured:", error?.message);
     }
