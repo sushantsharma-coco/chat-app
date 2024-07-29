@@ -91,11 +91,7 @@ const getCurrentUser = async (req, res) => {
     return res
       .status(200)
       .send(
-        new ApiResponse(
-          200,
-          { user: req.user, blockedUsers },
-          "current user fetched successfully"
-        )
+        new ApiResponse(200, req.user, "current user fetched successfully")
       );
   } catch (error) {
     console.error("error occured :", error?.message);
