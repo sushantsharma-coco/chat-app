@@ -15,7 +15,7 @@ router.use(auth);
 router.route("/:reciverId").post(sendMessage).get(getMessages);
 router
   .route("/:reciverId/:message_id")
-  .patch(updateMessage)
+  // .patch(updateMessage)
   .delete(deleteMessage);
 
 router.route("/s/:reciverId/:message_id").patch(updateMessageSecondApproach);

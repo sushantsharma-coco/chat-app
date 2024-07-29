@@ -370,36 +370,41 @@ const blockUser = async (req, res) => {
 
     if (!userExists) throw new ApiError(404, "user with userId not found");
 
-    const you = User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        $push: {
-          isBlockedByUser: {
-            userId: userExists.userId,
-            userRef: userExists?._id,
-          },
-        },
-      },
-      { new: true }
-    );
+    let obj = {
+      userId: userExists.userId,
+      userRef: userExists?._id,
+    };
 
-    if (!you) throw new ApiError(500, "unable to block user");
+    const you = await User.findById(req.user?._id);
+
+    // let isAlreadyBlocked;
+    // you.isBlockedByUser.forEach((user) => {
+    //   if (user.userId == userExists.userId) isAlreadyBlocked = true;
+    // });
+
+    // if (isAlreadyBlocked) throw new ApiError(400, "user is already blocked");
+
+    you.isBlockedByUser.push(obj);
+    await you.save();
 
     const reciverSocketId = getReciverSocketId(userExists.userId);
-    if (reciverSocketId)
-      io.to(reciverSocketId).emit("blocked", `${you.userId} blocked you`);
-    console.log("blockUser:", you.userId);
+    if (reciverSocketId) {
+      io.to(reciverSocketId).emit("blocked", you.userId);
+      console.log("blocked");
+    }
 
     const sendersocketid = getReciverSocketId(req.user._id);
-    if (sendersocketid)
-      io.to(sendersocketid).emit("you blocked by :", reciverId);
+    if (sendersocketid) {
+      io.to(sendersocketid).emit("blocked", user_id);
+      console.log("blocked");
+    }
 
     return res
       .status(200)
       .send(
         new ApiResponse(
           200,
-          { blockedUser: isBlockedByUser[user_id] },
+          { blockedUser: obj },
           "user with sent userId blocked successfully"
         )
       );

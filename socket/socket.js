@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
 
   socket.on("markMessageAsSeen", async ({ senderId, reciverId }) => {
     try {
-      const  messages  = await Conversation.aggregate([
+      const messages = await Conversation.aggregate([
         {
           $match: {
             participants: {
@@ -65,8 +65,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("msg", (msg) => {
-    socket.broadcast.emit("msg", `  from: ${socket.id}  \n message :${msg}`);
+  socket.on("typing", async ({ senderId, reciverId }) => {
+    io.to(userSocketMap[reciverId]).emit(
+      "typing",
+      `${userSocketMap[senderId]} is typing...`
+    );
   });
 
   socket.on("disconnect", () => {

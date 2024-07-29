@@ -84,10 +84,18 @@ const getCurrentUser = async (req, res) => {
     if (!req.user || !req.user?._id)
       throw new ApiError(401, "'invalid user credentials");
 
+    const blockedUsers = await User.findById(req.user?._id).select(
+      "isBlockedByUser"
+    );
+
     return res
       .status(200)
       .send(
-        new ApiResponse(200, req.user, "current user fetched successfully")
+        new ApiResponse(
+          200,
+          { user: req.user, blockedUsers },
+          "current user fetched successfully"
+        )
       );
   } catch (error) {
     console.error("error occured :", error?.message);
