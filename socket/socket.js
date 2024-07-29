@@ -66,10 +66,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("typing", async ({ senderId, reciverId }) => {
-    io.to(userSocketMap[reciverId]).emit(
-      "typing",
-      `${userSocketMap[senderId]} is typing...`
-    );
+    io.to(userSocketMap[reciverId]).emit("typing", senderId);
   });
 
   socket.on("disconnect", () => {
