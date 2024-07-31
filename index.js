@@ -23,7 +23,13 @@ app.use(json());
 app.use(urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
-  return res.status(200).send({ message: "home page", statusCode: 200 });
+  return res
+    .status(200)
+    .send({
+      message: "home page",
+      statusCode: 200,
+      github: "https://github.com/sushant81074",
+    });
 });
 
 app.use("/api/v1/auth", authRouter.router);
