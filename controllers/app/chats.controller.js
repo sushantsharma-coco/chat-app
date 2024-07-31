@@ -377,12 +377,12 @@ const blockUser = async (req, res) => {
 
     const you = await User.findById(req.user?._id);
 
-    // let isAlreadyBlocked;
-    // you.isBlockedByUser.forEach((user) => {
-    //   if (user.userId == userExists.userId) isAlreadyBlocked = true;
-    // });
+    let isAlreadyBlocked;
+    you.isBlockedByUser.forEach((user) => {
+      if (user.userId == userExists.userId) isAlreadyBlocked = true;
+    });
 
-    // if (isAlreadyBlocked) throw new ApiError(400, "user is already blocked");
+    if (isAlreadyBlocked) throw new ApiError(400, "user is already blocked");
 
     you.isBlockedByUser.push(obj);
     await you.save();
@@ -423,6 +423,49 @@ const blockUser = async (req, res) => {
   }
 };
 
+const unBlockUser = async (req, res) => {
+  try {
+    const { user_id } = req.body;
+
+    if (!user_id || user_id == "")
+      throw new ApiError(400, "user_id not sent to backend");
+
+    const userBlockArr = await User.findById(req.user?._id).select(
+      "isBlockedByUser -_id"
+    );
+
+    userBlockArr.forEach((user, index) => {
+      if (user._id == user_id) {
+        delete unBlockUser[index];
+      }
+    });
+
+    await userBlockArr.save();
+
+    return res
+      .status(200)
+      .send(
+        new ApiResponse(
+          200,
+          { message: user_id + " unblocked" },
+          "user unblocked successfully"
+        )
+      );
+  } catch (error) {
+    console.error("error occured :", error?.message);
+
+    return res
+      .status(error?.statusCode || 500)
+      .send(
+        new ApiError(
+          error?.statusCode || 500,
+          error?.message || "internal server error",
+          error?.errors
+        )
+      );
+  }
+};
+
 module.exports = {
   sendMessage,
   getMessages,
@@ -430,4 +473,5 @@ module.exports = {
   updateMessageSecondApproach,
   deleteMessage,
   blockUser,
+  unBlockUser,
 };

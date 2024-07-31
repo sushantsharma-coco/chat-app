@@ -5,6 +5,7 @@ const {
   deleteMessage,
   blockUser,
   updateMessageSecondApproach,
+  unBlockUser,
 } = require("../../controllers/app/chats.controller");
 const { auth } = require("../../middlewares/auth.middleware");
 
@@ -21,5 +22,6 @@ router
 router.route("/s/:reciverId/:message_id").patch(updateMessageSecondApproach);
 
 router.route("/blc-usr/:user_id").patch(blockUser);
+router.route("/un-blc-usr/:user_id").patch(unBlockUser);
 
 module.exports = { router };
