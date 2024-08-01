@@ -427,6 +427,7 @@ const unBlockUser = async (req, res) => {
   try {
     const { user_id } = req.params;
 
+
     if (!user_id || user_id == "")
       throw new ApiError(400, "user_id not sent to backend");
 
