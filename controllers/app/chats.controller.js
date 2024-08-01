@@ -427,7 +427,6 @@ const unBlockUser = async (req, res) => {
   try {
     const { user_id } = req.params;
 
-
     if (!user_id || user_id == "")
       throw new ApiError(400, "user_id not sent to backend");
 
@@ -435,21 +434,29 @@ const unBlockUser = async (req, res) => {
       "isBlockedByUser -_id"
     );
 
-    user.isBlockedByUser.forEach((user, index) => {
-      if (user._id == user_id) {
-        delete user.isBlockedByUser[index];
-      }
+    let block = user.isBlockedByUser.filter((bu) => {
+      console.log("bu", bu);
+      bu.userRef != user_id;
     });
 
-    await user.save();
-    // this should work
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          isBlockedByUser: block,
+        },
+      },
+      { new: true }
+    );
+
+    console.log(updatedUser);
 
     return res
       .status(200)
       .send(
         new ApiResponse(
           200,
-          { message: user_id + " unblocked" },
+          { message: user_id + " unblocked", blc: user.isBlockedByUser },
           "user unblocked successfully"
         )
       );
@@ -467,7 +474,6 @@ const unBlockUser = async (req, res) => {
       );
   }
 };
-
 module.exports = {
   sendMessage,
   getMessages,
