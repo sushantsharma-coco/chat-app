@@ -441,6 +441,7 @@ const unBlockUser = async (req, res) => {
     });
 
     await user.save();
+    // this should work
 
     return res
       .status(200)
