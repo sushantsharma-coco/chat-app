@@ -431,17 +431,17 @@ const unBlockUser = async (req, res) => {
     if (!user_id || user_id == "")
       throw new ApiError(400, "user_id not sent to backend");
 
-    const userBlockArr = await User.findById(req.user?._id).select(
+    const user = await User.findById(req.user?._id).select(
       "isBlockedByUser -_id"
     );
 
-    userBlockArr.forEach((user, index) => {
+    user.isBlockedByUser.forEach((user, index) => {
       if (user._id == user_id) {
-        delete unBlockUser[index];
+        delete user.isBlockedByUser[index];
       }
     });
 
-    await userBlockArr.save();
+    await user.save();
 
     return res
       .status(200)
