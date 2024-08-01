@@ -229,7 +229,7 @@ const updateMessageSecondApproach = async (req, res) => {
     }
     return res
       .status(200)
-      .send(new ApiResponse(200, message, "message updated successfully"));
+      .send(new ApiResponse(200, updtMsg, "message updated successfully"));
   } catch (error) {
     console.error("error occured :", error?.message);
 
