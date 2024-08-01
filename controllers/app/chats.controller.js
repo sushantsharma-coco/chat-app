@@ -449,7 +449,7 @@ const unBlockUser = async (req, res) => {
       { new: true }
     );
 
-    console.log(updatedUser); 
+    console.log(updatedUser);
 
     return res
       .status(200)
