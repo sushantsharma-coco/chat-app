@@ -28,13 +28,21 @@ const sendMessage = async (req, res) => {
     if (!reciverExists)
       throw new ApiError(404, "user with reciverId not found in the system");
 
-    if (reciverExists.isBlockedByUser.includes({ userRef: senderId }))
+    const blockeds = reciverExists.isBlockedByUser.filter(
+      (e) => e.userRef === senderId
+    );
+
+    if (blockeds)
       throw new ApiError(
         400,
         "you can't send message to reciver as you are blocked by the reciver"
       );
 
-    if (user.isBlockedByUser.includes({ userRef: reciverId }))
+    const blockedr = user.isBlockedByUser.filter(
+      (e) => e.userRef === reciverId
+    );
+
+    if (blockedr)
       throw new ApiError(
         400,
         "you can't send message to reciver as you've blocked the reciver"
