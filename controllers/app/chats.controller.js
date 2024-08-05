@@ -32,7 +32,7 @@ const sendMessage = async (req, res) => {
       (e) => e.userRef === senderId
     );
 
-    if (blockeds)
+    if (blockeds.length)
       throw new ApiError(
         400,
         "you can't send message to reciver as you are blocked by the reciver"
@@ -42,7 +42,7 @@ const sendMessage = async (req, res) => {
       (e) => e.userRef === reciverId
     );
 
-    if (blockedr)
+    if (blockedr.length)
       throw new ApiError(
         400,
         "you can't send message to reciver as you've blocked the reciver"
