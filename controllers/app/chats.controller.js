@@ -29,7 +29,7 @@ const sendMessage = async (req, res) => {
       throw new ApiError(404, "user with reciverId not found in the system");
 
     const blockeds = reciverExists.isBlockedByUser.filter(
-      (e) => e.userRef === senderId
+      (e) => e.userRef == senderId
     );
 
     if (blockeds.length)
@@ -39,7 +39,7 @@ const sendMessage = async (req, res) => {
       );
 
     const blockedr = user.isBlockedByUser.filter(
-      (e) => e.userRef === reciverId
+      (e) => e.userRef == reciverId
     );
 
     if (blockedr.length)
