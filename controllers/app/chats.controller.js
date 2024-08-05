@@ -28,25 +28,25 @@ const sendMessage = async (req, res) => {
     if (!reciverExists)
       throw new ApiError(404, "user with reciverId not found in the system");
 
-    const blockeds = reciverExists.isBlockedByUser.filter(
-      (e) => e.userRef.equals(senderId)
-    );
+    // const blockeds = reciverExists.isBlockedByUser.filter(
+    //   (e) => e.userRef.equals(senderId)
+    // );
 
-    if (blockeds.length)
-      throw new ApiError(
-        400,
-        "you can't send message to reciver as you are blocked by the reciver"
-      );
+    // if (blockeds.length)
+    //   throw new ApiError(
+    //     400,
+    //     "you can't send message to reciver as you are blocked by the reciver"
+    //   );
 
-    const blockedr = user.isBlockedByUser.filter(
-      (e) => e.userRef.equals(reciverId)
-    );
+    // const blockedr = user.isBlockedByUser.filter(
+    //   (e) => e.userRef.equals(reciverId)
+    // );
 
-    if (blockedr.length)
-      throw new ApiError(
-        400,
-        "you can't send message to reciver as you've blocked the reciver"
-      );
+    // if (blockedr.length)
+    //   throw new ApiError(
+    //     400,
+    //     "you can't send message to reciver as you've blocked the reciver"
+    //   );
 
     // if chat exists
     let convo = await Conversation.findOne({
